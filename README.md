@@ -171,6 +171,7 @@ Run syntax and smoke checks:
 
 ```sh
 node --check src/cli.js
+npm test
 npm run doctor
 npm run images -- --source official --limit 3
 ```
