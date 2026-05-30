@@ -419,7 +419,7 @@ async function unmountDisk(path) {
   const disks = await getLinuxDisks({ includeInternal: true });
   const disk = disks.find((candidate) => candidate.path === path);
   for (const mountpoint of disk?.mountpoints || []) {
-    await run("sudo", ["umount", mountpoint], { stdio: "inherit" });
+    await runSudo(["umount", mountpoint], { stdio: "inherit" });
   }
 }
 
@@ -435,14 +435,18 @@ async function writeImage(imagePath, disk) {
 
   if (!compression) {
     ddArgs.unshift(`if=${imagePath}`);
-    await run("sudo", ["dd", ...ddArgs], { stdio: "inherit" });
+    await runSudo(["dd", ...ddArgs], { stdio: "inherit" });
     return;
   }
 
   const decompressor = compression === "xz"
     ? spawn("xz", ["-dc", imagePath], { stdio: ["ignore", "pipe", "inherit"] })
     : spawn("lz4", ["-dc", imagePath], { stdio: ["ignore", "pipe", "inherit"] });
-  const writer = spawn("sudo", ["dd", ...ddArgs], { stdio: ["pipe", "inherit", "inherit"] });
+  const sudoArgs = sudoPassword() ? ["-S", "-k", "-p", "", "dd", ...ddArgs] : ["dd", ...ddArgs];
+  const writer = spawn("sudo", sudoArgs, { stdio: ["pipe", "inherit", "inherit"] });
+  if (sudoPassword()) {
+    writer.stdin.write(`${sudoPassword()}\n`);
+  }
   decompressor.stdout.pipe(writer.stdin);
 
   const [decompressCode, writerCode] = await Promise.all([waitFor(decompressor), waitFor(writer)]);
@@ -470,11 +474,30 @@ async function run(command, args, options = {}) {
   if (code !== 0) throw new Error(`${command} ${args.join(" ")} failed with exit code ${code}.`);
 }
 
+async function runSudo(args, options = {}) {
+  const password = sudoPassword();
+  if (!password) {
+    await run("sudo", args, options);
+    return;
+  }
+
+  const child = spawn("sudo", ["-S", "-k", "-p", "", ...args], {
+    stdio: ["pipe", options.stdio === "inherit" ? "inherit" : "pipe", options.stdio === "inherit" ? "inherit" : "pipe"]
+  });
+  child.stdin.end(`${password}\n`);
+  const code = await waitFor(child);
+  if (code !== 0) throw new Error(`sudo ${args.join(" ")} failed with exit code ${code}.`);
+}
+
 function waitFor(child) {
   return new Promise((resolve, reject) => {
     child.on("error", reject);
     child.on("close", resolve);
   });
+}
+
+function sudoPassword() {
+  return process.env.LEECHE_SUDO_PASSWORD || "";
 }
 
 function readText(path) {
