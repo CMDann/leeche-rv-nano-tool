@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Leeche RV Nano Tool</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Fish N Bits device lab</p>
+        <h1>Leeche RV Nano Tool</h1>
+      </div>
+      <div class="status-strip" id="hostStatus">Starting...</div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel image-panel" aria-labelledby="image-title">
+        <div class="panel-heading">
+          <div>
+            <p class="step">Step 1</p>
+            <h2 id="image-title">Image</h2>
+          </div>
+          <button id="refreshImagesButton" class="secondary" type="button">Refresh</button>
+        </div>
+
+        <label>
+          Source
+          <select id="sourceSelect"></select>
+        </label>
+
+        <label>
+          Release asset
+          <select id="assetSelect"></select>
+        </label>
+
+        <button id="downloadButton" type="button">Download selected image</button>
+
+        <label>
+          Local image
+          <select id="localImageSelect"></select>
+        </label>
+
+        <label>
+          Or image path
+          <input id="imagePathInput" type="text" placeholder="/absolute/path/to/image.img.xz">
+        </label>
+      </section>
+
+      <section class="panel target-panel" aria-labelledby="target-title">
+        <div class="panel-heading">
+          <div>
+            <p class="step">Step 2</p>
+            <h2 id="target-title">Target SD Card</h2>
+          </div>
+          <button id="refreshDisksButton" class="secondary" type="button">Refresh</button>
+        </div>
+
+        <div id="diskList" class="disk-list"></div>
+
+        <div class="warning-box">
+          Flashing overwrites the entire target disk. Use the disk shown here, not an example from docs.
+        </div>
+
+        <label>
+          Confirmation
+          <input id="confirmInput" type="text" autocomplete="off" placeholder="Select a disk first">
+        </label>
+
+        <button id="flashButton" class="danger" type="button" disabled>Flash selected image</button>
+      </section>
+
+      <section class="panel configure-panel" aria-labelledby="configure-title">
+        <div class="panel-heading">
+          <div>
+            <p class="step">Step 3</p>
+            <h2 id="configure-title">First-Boot Setup</h2>
+          </div>
+        </div>
+
+        <label>
+          SSH host
+          <input id="hostInput" type="text" placeholder="root@192.168.1.50">
+        </label>
+
+        <div class="field-grid">
+          <label>
+            Hostname
+            <input id="hostnameInput" type="text" placeholder="licheerv-nano">
+          </label>
+          <label>
+            Timezone
+            <input id="timezoneInput" type="text" value="America/Los_Angeles">
+          </label>
+        </div>
+
+        <label>
+          Authorized key path
+          <input id="authorizedKeyInput" type="text" placeholder="~/.ssh/id_ed25519.pub">
+        </label>
+
+        <div class="field-grid">
+          <label>
+            Wi-Fi SSID
+            <input id="wifiSsidInput" type="text" autocomplete="off">
+          </label>
+          <label>
+            Wi-Fi password
+            <input id="wifiPasswordInput" type="password" autocomplete="off">
+          </label>
+        </div>
+
+        <p class="fine-print">Wi-Fi password is sent only to this local server process and passed as an environment variable.</p>
+        <button id="configureButton" type="button">Run setup over SSH</button>
+      </section>
+
+      <section class="panel jobs-panel" aria-labelledby="jobs-title">
+        <div class="panel-heading">
+          <div>
+            <p class="step">Activity</p>
+            <h2 id="jobs-title">Jobs</h2>
+          </div>
+        </div>
+        <div id="jobsList" class="jobs-list"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

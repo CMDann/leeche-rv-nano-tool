@@ -7,15 +7,19 @@ import { promisify } from "node:util";
 import { spawn, spawnSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
 import { getSource, imageSources, sourceNames } from "./sources.js";
 
 const pipeline = promisify(pipelineCallback);
 const userAgent = "leeche-rv-nano-tool/0.1";
 
-main().catch((error) => {
-  console.error(`error: ${error.message}`);
-  process.exitCode = 1;
-});
+if (isMain()) {
+  main().catch((error) => {
+    console.error(`error: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
 
 async function main() {
   const [command, ...argv] = process.argv.slice(2);
@@ -75,7 +79,7 @@ Safety:
 `);
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const args = { _: [] };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -104,7 +108,7 @@ function parseArgs(argv) {
   return args;
 }
 
-async function doctor() {
+export async function doctor() {
   console.log(`Platform: ${process.platform}`);
   console.log(`Node: ${process.version}`);
 
@@ -121,7 +125,7 @@ async function doctor() {
   }
 }
 
-function listSources() {
+export function listSources() {
   for (const [name, source] of Object.entries(imageSources)) {
     console.log(`${name.padEnd(10)} ${source.label}`);
     console.log(`           github.com/${source.owner}/${source.repo}`);
@@ -129,7 +133,7 @@ function listSources() {
   }
 }
 
-async function listImages(args) {
+export async function listImages(args) {
   const sourceName = args.source || "official";
   const source = getSource(sourceName);
   const releases = await fetchReleases(source);
@@ -147,7 +151,7 @@ async function listImages(args) {
   }
 }
 
-async function downloadImage(args) {
+export async function downloadImage(args) {
   const sourceName = args.source || "official";
   const source = getSource(sourceName);
   const tag = args.tag || "latest";
@@ -178,13 +182,13 @@ async function downloadImage(args) {
   return destination;
 }
 
-async function prepareCard(args) {
+export async function prepareCard(args) {
   if (!args.disk) throw new Error("Missing --disk /dev/diskN.");
   const imagePath = args.image ? resolve(String(args.image)) : await downloadImage(args);
   await flashImage({ ...args, image: imagePath });
 }
 
-async function listDisks() {
+export async function listDisks() {
   const disks = await getDisks();
   if (disks.length === 0) {
     console.log("No removable/external whole disks found.");
@@ -199,11 +203,11 @@ async function listDisks() {
   }
 }
 
-async function flashImage(args) {
+export async function flashImage(args) {
   if (!args.image) throw new Error("Missing --image PATH.");
   if (!args.disk) throw new Error("Missing --disk /dev/diskN.");
 
-  const imagePath = resolve(String(args.image));
+  const imagePath = resolve(expandPath(String(args.image)));
   const diskPath = String(args.disk);
   if (!existsSync(imagePath)) throw new Error(`Image not found: ${imagePath}`);
   if (!diskPath.startsWith("/dev/")) throw new Error(`Refusing non-device path: ${diskPath}`);
@@ -236,7 +240,7 @@ async function flashImage(args) {
   console.log("Flash complete. The card was ejected if the platform supports it.");
 }
 
-async function configureDevice(args) {
+export async function configureDevice(args) {
   if (!args.host) throw new Error("Missing --host root@IP.");
 
   const host = String(args.host);
@@ -248,7 +252,7 @@ async function configureDevice(args) {
   }
 
   if (args.authorized_key) {
-    const keyPath = resolve(String(args.authorized_key));
+    const keyPath = resolve(expandPath(String(args.authorized_key)));
     if (!existsSync(keyPath)) throw new Error(`Authorized key file not found: ${keyPath}`);
     const key = shellQuote(readText(keyPath).trim());
     commands.push("mkdir -p /root/.ssh && chmod 700 /root/.ssh");
@@ -292,19 +296,19 @@ EOF`);
   await run("ssh", [host, remoteCommand], { stdio: "inherit" });
 }
 
-async function fetchReleases(source) {
+export async function fetchReleases(source) {
   return fetchJson(`https://api.github.com/repos/${source.owner}/${source.repo}/releases`);
 }
 
-async function fetchLatestRelease(source) {
+export async function fetchLatestRelease(source) {
   return fetchJson(`https://api.github.com/repos/${source.owner}/${source.repo}/releases/latest`);
 }
 
-function matchingAssets(source, release) {
+export function matchingAssets(source, release) {
   return (release.assets || []).filter((asset) => source.assetPattern.test(asset.name));
 }
 
-function chooseAsset(assets, requested) {
+export function chooseAsset(assets, requested) {
   if (!requested) return assets[0];
   const exact = assets.find((asset) => asset.name === requested);
   if (exact) return exact;
@@ -334,7 +338,7 @@ async function downloadToFile(url, destination, digest) {
   await pipeline(response.body, hashStream, createWriteStream(destination));
 }
 
-async function getDisks(options = {}) {
+export async function getDisks(options = {}) {
   if (process.platform === "darwin") return getMacDisks(options);
   if (process.platform === "linux") return getLinuxDisks(options);
   return [];
@@ -483,7 +487,13 @@ function wpaQuote(value) {
   return `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
-function formatBytes(bytes) {
+function expandPath(path) {
+  if (path === "~") return homedir();
+  if (path.startsWith("~/")) return join(homedir(), path.slice(2));
+  return path;
+}
+
+export function formatBytes(bytes) {
   if (!bytes) return "unknown size";
   const units = ["B", "KB", "MB", "GB", "TB"];
   let value = bytes;
@@ -493,4 +503,8 @@ function formatBytes(bytes) {
     unit += 1;
   }
   return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
+function isMain() {
+  return process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 }

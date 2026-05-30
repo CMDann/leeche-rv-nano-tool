@@ -10,6 +10,7 @@
     "doctor": "node src/cli.js doctor",
     "images": "node src/cli.js images",
     "disks": "node src/cli.js disks",
+    "gui": "node src/server.js",
     "test": "node --test"
   },
   "keywords": [

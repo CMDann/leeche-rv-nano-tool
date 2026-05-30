@@ -67,6 +67,32 @@ FLASH /dev/disk4
 
 Use the disk path from your own `node src/cli.js disks` output. Do not copy a disk path from this README.
 
+## GUI
+
+Start the local browser GUI:
+
+```sh
+npm run gui
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5174
+```
+
+The GUI wraps the same CLI commands:
+
+- choose an image source and release asset
+- download images into `images/`
+- list removable/external disks
+- flash a selected image after typing the exact confirmation phrase
+- run first-boot setup over SSH
+
+Leave the terminal open while the GUI is running. Flashing and SSH setup jobs attach to that terminal so `sudo`, `ssh`, and `dd` progress behave normally.
+
+The GUI uses the Fish N Bits A-Side brand expression: light structural surfaces, restrained typography, Sage accents, and clear grid alignment for platform UI.
+
 ## Image Sources
 
 Current built-in sources:
@@ -171,6 +197,7 @@ Run syntax and smoke checks:
 
 ```sh
 node --check src/cli.js
+node --check src/server.js
 npm test
 npm run doctor
 npm run images -- --source official --limit 3

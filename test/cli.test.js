@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createAppServer } from "../src/server.js";
 
 const node = process.execPath;
 
@@ -44,5 +45,25 @@ describe("CLI smoke tests", () => {
     const result = runCli(["flash", "--disk", "/dev/disk999"]);
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Missing --image PATH/);
+  });
+});
+
+describe("GUI server smoke tests", () => {
+  it("serves the app shell and health endpoint", async () => {
+    const server = createAppServer();
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address();
+
+    try {
+      const baseUrl = `http://127.0.0.1:${port}`;
+      const health = await fetch(`${baseUrl}/api/health`).then((response) => response.json());
+      assert.equal(health.node, process.version);
+
+      const html = await fetch(baseUrl).then((response) => response.text());
+      assert.match(html, /Leeche RV Nano Tool/);
+      assert.match(html, /Flash selected image/);
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 });
