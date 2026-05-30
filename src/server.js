@@ -117,7 +117,9 @@ async function handleApi(request, response, url) {
       throw new Error("Flash requires overwrite acknowledgement.");
     }
     const args = ["flash", "--image", body.image, "--disk", body.disk, "--confirm", `FLASH ${body.disk}`];
-    sendJson(response, 202, startTerminalJob("flash", args));
+    const job = createJob("flash", args);
+    sendJson(response, 202, job);
+    runFlashJob(job, args, body.sudoPassword);
     return;
   }
 
@@ -140,6 +142,27 @@ async function handleApi(request, response, url) {
 
 function startCapturedJob(type, cliArgs, env = process.env) {
   const job = createJob(type, cliArgs);
+  runCapturedJob(job, cliArgs, env);
+  return job;
+}
+
+async function runFlashJob(job, cliArgs, sudoPassword) {
+  try {
+    if (sudoPassword) {
+      appendLog(job, "Validating sudo credentials from the GUI.");
+      await validateSudo(job, sudoPassword);
+      appendLog(job, "Sudo credentials accepted.");
+    } else {
+      appendLog(job, "No admin password provided. Using cached sudo credentials if available.");
+    }
+
+    runCapturedJob(job, cliArgs);
+  } catch (error) {
+    finishJob(job, "failed", error.message);
+  }
+}
+
+function runCapturedJob(job, cliArgs, env = process.env) {
   const child = spawn(process.execPath, ["src/cli.js", ...cliArgs], {
     cwd: rootDir,
     env,
@@ -150,8 +173,6 @@ function startCapturedJob(type, cliArgs, env = process.env) {
   child.stderr.on("data", (chunk) => appendLog(job, chunk));
   child.on("error", (error) => finishJob(job, "failed", error.message));
   child.on("close", (code) => finishJob(job, code === 0 ? "completed" : "failed", `exit code ${code}`));
-
-  return job;
 }
 
 function startTerminalJob(type, cliArgs, env = process.env) {
@@ -192,6 +213,28 @@ function appendLog(job, chunk) {
     if (line.trim()) job.logs.push(line);
   }
   if (job.logs.length > 200) job.logs.splice(0, job.logs.length - 200);
+}
+
+function validateSudo(job, sudoPassword) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("sudo", ["-S", "-p", "", "-v"], {
+      cwd: rootDir,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+
+    child.stdout.on("data", (chunk) => appendLog(job, chunk));
+    child.stderr.on("data", (chunk) => appendLog(job, chunk));
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error("Sudo credential validation failed."));
+      }
+    });
+
+    child.stdin.end(`${sudoPassword}\n`);
+  });
 }
 
 function finishJob(job, status, result) {

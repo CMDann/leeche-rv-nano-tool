@@ -89,7 +89,7 @@ The GUI wraps the same CLI commands:
 - flash a selected image after enabling the overwrite acknowledgement toggle
 - run first-boot setup over SSH
 
-Leave the terminal open while the GUI is running. Flashing and SSH setup jobs attach to that terminal so `sudo`, `ssh`, and `dd` progress behave normally.
+Leave the terminal open while the GUI is running. Flashing jobs show progress in the Jobs panel. The admin password field is used only for a local `sudo -v` preflight and is not written to job logs. SSH setup jobs still attach to the terminal for now because host-key and password prompts need a real interactive session.
 
 The CLI still uses the exact `FLASH <disk>` phrase. The GUI keeps that guardrail behind the toggle by passing the matching confirmation phrase to the local CLI only after acknowledgement.
 

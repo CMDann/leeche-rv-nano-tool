@@ -71,6 +71,12 @@
           </span>
         </label>
 
+        <label>
+          Admin password
+          <input id="sudoPasswordInput" type="password" autocomplete="current-password" placeholder="Used locally for sudo">
+        </label>
+        <p class="fine-print">Stored only in this browser field and sent to the local server for `sudo -v`; it is not written to job logs.</p>
+
         <button id="flashButton" class="danger" type="button" disabled>Flash selected image</button>
       </section>
 

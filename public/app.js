@@ -17,6 +17,7 @@ const elements = {
   diskList: document.querySelector("#diskList"),
   confirmToggle: document.querySelector("#confirmToggle"),
   confirmToggleText: document.querySelector("#confirmToggleText"),
+  sudoPasswordInput: document.querySelector("#sudoPasswordInput"),
   flashButton: document.querySelector("#flashButton"),
   downloadButton: document.querySelector("#downloadButton"),
   refreshImagesButton: document.querySelector("#refreshImagesButton"),
@@ -222,9 +223,14 @@ async function startFlash() {
   const disk = state.selectedDisk;
   if (!image || !disk || !elements.confirmToggle.checked) return;
 
-  const response = await apiPost("/api/jobs/flash", { image, disk, acknowledged: true });
+  const response = await apiPost("/api/jobs/flash", {
+    image,
+    disk,
+    acknowledged: true,
+    sudoPassword: elements.sudoPasswordInput.value
+  });
   trackJob(response.id);
-  showToast("Flash started. Watch the terminal for sudo prompts.");
+  showToast("Flash started. Progress will appear in Jobs.");
 }
 
 async function startConfigure() {

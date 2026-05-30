@@ -61,7 +61,27 @@ describe("GUI server smoke tests", () => {
 
       const html = await fetch(baseUrl).then((response) => response.text());
       assert.match(html, /Leeche RV Nano Tool/);
+      assert.match(html, /Admin password/);
       assert.match(html, /Flash selected image/);
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+
+  it("rejects flash jobs without overwrite acknowledgement", async () => {
+    const server = createAppServer();
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address();
+
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/api/jobs/flash`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: "/tmp/test.img", disk: "/dev/disk999" })
+      });
+      const body = await response.json();
+      assert.equal(response.status, 500);
+      assert.match(body.error, /acknowledgement/);
     } finally {
       await new Promise((resolve) => server.close(resolve));
     }
