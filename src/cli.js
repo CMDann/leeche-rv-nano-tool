@@ -425,7 +425,9 @@ async function unmountDisk(path) {
 
 async function writeImage(imagePath, disk) {
   const compression = compressionFor(imagePath);
-  await run("sudo", ["-v"], { stdio: "inherit" });
+  if (process.env.LEECHE_SKIP_SUDO_VALIDATE !== "1") {
+    await run("sudo", ["-v"], { stdio: "inherit" });
+  }
 
   const ddArgs = process.platform === "darwin"
     ? [`of=${disk.rawPath}`, "bs=4m", "conv=sync", "status=progress"]

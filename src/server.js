@@ -156,7 +156,7 @@ async function runFlashJob(job, cliArgs, sudoPassword) {
       appendLog(job, "No admin password provided. Using cached sudo credentials if available.");
     }
 
-    runCapturedJob(job, cliArgs);
+    runCapturedJob(job, cliArgs, { ...process.env, LEECHE_SKIP_SUDO_VALIDATE: "1" });
   } catch (error) {
     finishJob(job, "failed", error.message);
   }
