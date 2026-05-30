@@ -15,7 +15,8 @@ const elements = {
   localImageSelect: document.querySelector("#localImageSelect"),
   imagePathInput: document.querySelector("#imagePathInput"),
   diskList: document.querySelector("#diskList"),
-  confirmInput: document.querySelector("#confirmInput"),
+  confirmToggle: document.querySelector("#confirmToggle"),
+  confirmToggleText: document.querySelector("#confirmToggleText"),
   flashButton: document.querySelector("#flashButton"),
   downloadButton: document.querySelector("#downloadButton"),
   refreshImagesButton: document.querySelector("#refreshImagesButton"),
@@ -63,7 +64,7 @@ function bindEvents() {
     });
   });
   elements.downloadButton.addEventListener("click", () => safeRun(startDownload));
-  elements.confirmInput.addEventListener("input", updateFlashButton);
+  elements.confirmToggle.addEventListener("change", updateFlashButton);
   elements.localImageSelect.addEventListener("change", updateFlashButton);
   elements.imagePathInput.addEventListener("input", updateFlashButton);
   elements.flashButton.addEventListener("click", () => safeRun(startFlash));
@@ -140,7 +141,9 @@ function renderImages() {
 function renderDisks() {
   if (state.disks.length === 0) {
     elements.diskList.innerHTML = `<p class="disk-meta">No removable or external whole disks found.</p>`;
-    elements.confirmInput.placeholder = "No disk selected";
+    elements.confirmToggle.checked = false;
+    elements.confirmToggle.disabled = true;
+    elements.confirmToggleText.textContent = "No disk selected.";
     updateFlashButton();
     return;
   }
@@ -166,12 +169,15 @@ function renderDisks() {
   for (const input of elements.diskList.querySelectorAll("input[name='disk']")) {
     input.addEventListener("change", () => {
       state.selectedDisk = input.value;
-      elements.confirmInput.value = "";
+      elements.confirmToggle.checked = false;
       updateFlashButton();
     });
   }
 
-  elements.confirmInput.placeholder = expectedConfirmation();
+  elements.confirmToggle.disabled = false;
+  elements.confirmToggleText.textContent = state.selectedDisk
+    ? `I understand this will erase ${state.selectedDisk}.`
+    : "Select a disk first.";
   updateFlashButton();
 }
 
@@ -214,10 +220,9 @@ async function startDownload() {
 async function startFlash() {
   const image = selectedImagePath();
   const disk = state.selectedDisk;
-  const confirm = elements.confirmInput.value.trim();
-  if (!image || !disk || confirm !== expectedConfirmation()) return;
+  if (!image || !disk || !elements.confirmToggle.checked) return;
 
-  const response = await apiPost("/api/jobs/flash", { image, disk, confirm });
+  const response = await apiPost("/api/jobs/flash", { image, disk, acknowledged: true });
   trackJob(response.id);
   showToast("Flash started. Watch the terminal for sudo prompts.");
 }
@@ -274,16 +279,12 @@ async function safeRun(task) {
 }
 
 function updateFlashButton() {
-  const ready = Boolean(selectedImagePath() && state.selectedDisk && elements.confirmInput.value.trim() === expectedConfirmation());
+  const ready = Boolean(selectedImagePath() && state.selectedDisk && elements.confirmToggle.checked);
   elements.flashButton.disabled = !ready;
 }
 
 function selectedImagePath() {
   return elements.imagePathInput.value.trim() || elements.localImageSelect.value;
-}
-
-function expectedConfirmation() {
-  return state.selectedDisk ? `FLASH ${state.selectedDisk}` : "";
 }
 
 async function apiGet(path) {

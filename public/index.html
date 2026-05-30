@@ -63,9 +63,12 @@
           Flashing overwrites the entire target disk. Use the disk shown here, not an example from docs.
         </div>
 
-        <label>
-          Confirmation
-          <input id="confirmInput" type="text" autocomplete="off" placeholder="Select a disk first">
+        <label class="toggle-row">
+          <input id="confirmToggle" type="checkbox">
+          <span>
+            <span class="toggle-title">Overwrite selected disk</span>
+            <span class="toggle-copy" id="confirmToggleText">Select a disk first.</span>
+          </span>
         </label>
 
         <button id="flashButton" class="danger" type="button" disabled>Flash selected image</button>

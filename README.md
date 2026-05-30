@@ -86,10 +86,12 @@ The GUI wraps the same CLI commands:
 - choose an image source and release asset
 - download images into `images/`
 - list removable/external disks
-- flash a selected image after typing the exact confirmation phrase
+- flash a selected image after enabling the overwrite acknowledgement toggle
 - run first-boot setup over SSH
 
 Leave the terminal open while the GUI is running. Flashing and SSH setup jobs attach to that terminal so `sudo`, `ssh`, and `dd` progress behave normally.
+
+The CLI still uses the exact `FLASH <disk>` phrase. The GUI keeps that guardrail behind the toggle by passing the matching confirmation phrase to the local CLI only after acknowledgement.
 
 The GUI uses the Fish N Bits A-Side brand expression: light structural surfaces, restrained typography, Sage accents, and clear grid alignment for platform UI.
 

@@ -112,8 +112,11 @@ async function handleApi(request, response, url) {
 
   if (request.method === "POST" && url.pathname === "/api/jobs/flash") {
     const body = await readJson(request);
-    requireBody(body, ["image", "disk", "confirm"]);
-    const args = ["flash", "--image", body.image, "--disk", body.disk, "--confirm", body.confirm];
+    requireBody(body, ["image", "disk"]);
+    if (body.acknowledged !== true) {
+      throw new Error("Flash requires overwrite acknowledgement.");
+    }
+    const args = ["flash", "--image", body.image, "--disk", body.disk, "--confirm", `FLASH ${body.disk}`];
     sendJson(response, 202, startTerminalJob("flash", args));
     return;
   }
