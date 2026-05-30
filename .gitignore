@@ -1,0 +1,8 @@
+node_modules/
+images/
+*.img
+*.img.xz
+*.img.lz4
+*.log
+.DS_Store
+.codex-write-test

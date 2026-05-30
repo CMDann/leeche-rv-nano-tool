@@ -1,0 +1,27 @@
+{
+  "name": "leeche-rv-nano-tool",
+  "version": "0.1.0",
+  "description": "CLI helper for downloading, flashing, and configuring LicheeRV Nano SD card images.",
+  "type": "module",
+  "bin": {
+    "leeche-rv-nano": "./src/cli.js"
+  },
+  "scripts": {
+    "doctor": "node src/cli.js doctor",
+    "images": "node src/cli.js images",
+    "disks": "node src/cli.js disks",
+    "test": "node --test"
+  },
+  "keywords": [
+    "licheerv",
+    "licheerv-nano",
+    "sipeed",
+    "riscv",
+    "sd-card",
+    "flasher"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}
